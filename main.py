@@ -1,26 +1,28 @@
-from fastapi import FastAPI, HTTPException
-from googletrans import Translator
+from fastapi import FastAPI
+from pydantic import BaseModel
+from googletrans import Translator  # Make sure you have installed googletrans
 
-# Create a FastAPI app
+# Initialize FastAPI app
 app = FastAPI()
 
-# Initialize the translator
-translator = Translator()
+# Create a Pydantic model for the input data
+class TranslationRequest(BaseModel):
+    text: str
+    target_language: str
 
-# Define the translation endpoint
+# Root route
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Translation API!"}
+
+# Translation endpoint
 @app.post("/translate/")
-async def translate_text(text: str, target_language: str):
-    """
-    Translate Malayalam text to English and vice versa.
-    :param text: Input text.
-    :param target_language: 'en' for English, 'ml' for Malayalam.
-    :return: Translated text.
-    """
-    if target_language not in ["en", "ml"]:
-        raise HTTPException(status_code=400, detail="Invalid target language. Use 'en' or 'ml'.")
-
-    try:
-        translated = translator.translate(text, dest=target_language)
-        return {"original_text": text, "translated_text": translated.text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+def translate(request: TranslationRequest):
+    # Initialize the translator
+    translator = Translator()
+    
+    # Translate the text
+    translated = translator.translate(request.text, dest=request.target_language)
+    
+    # Return the translated text
+    return {"original_text": request.text, "translated_text": translated.text, "target_language": request.target_language}
